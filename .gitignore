@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Production build outputs
+dist/
+build/
+**/dist/
+**/build/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.env
+**/SWMS-prod/SWMS-prod/.env
+**/SWMS-prod/SWMS-prod/.env.local
+!.env.example
+!**/SWMS-prod/SWMS-prod/.env.example
+
+# Local databases and runtime test databases
+SWMS-prod/SWMS-prod/data/db.json
+SWMS-prod/SWMS-prod/data/db.test.json
+**/data/db.json
+**/data/db.test.json
+
+# Test coverage
+coverage/
+**/coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS and Editor metadata
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.sw?

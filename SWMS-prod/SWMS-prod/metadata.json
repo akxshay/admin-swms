@@ -1,0 +1,6 @@
+{
+  "name": "SWMS - Smart Waste Management System",
+  "description": "Doorstep recyclable-waste pickup service with live tracking, eco-points rewards, and waste exchange.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

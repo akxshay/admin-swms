@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output
+build/
+dist/
+
+# Test and coverage output
+coverage/
+
+# Environment files and secrets
+.env*
+!.env.example
+
+# Local databases and generated data
+data/db.json
+data/db.test.json
+
+# Logs
+*.log
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

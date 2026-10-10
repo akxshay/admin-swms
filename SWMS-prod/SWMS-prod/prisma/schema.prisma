@@ -1,0 +1,377 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CUSTOMER
+  COLLECTOR
+  ADMIN
+}
+
+enum BagSize {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum PickupStatus {
+  REQUESTED
+  ASSIGNED
+  ACCEPTED
+  EN_ROUTE
+  ARRIVED
+  COLLECTING
+  COLLECTED
+  VERIFIED
+  COMPLETED
+  MISSED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum ListingStatus {
+  ACTIVE
+  RESERVED
+  SOLD
+  CANCELLED
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  CLOSED
+}
+
+enum ReminderPreference {
+  MORNING_8
+  EVENING_20
+  NONE
+}
+
+model User {
+  id                   String           @id @default(cuid())
+  phone                String           @unique
+  role                 Role             @default(CUSTOMER)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  customerProfile      CustomerProfile?
+  addresses            Address[]
+  pickups              Pickup[]
+  rewardLedgers        RewardLedger[]
+  rewardRedemptions    RewardRedemption[]
+  achievements         CustomerAchievement[]
+  exchangeListings     ExchangeListing[]
+  notifications        Notification[]
+  complaints           Complaint[]
+}
+
+model CustomerProfile {
+  id                    String              @id @default(cuid())
+  userId                String              @unique
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                  String?
+  email                 String?
+  avatarColor           String?
+  avatarUrl             String?
+  propertyCategory      String?
+  reminderPreference    ReminderPreference  @default(NONE)
+  onboardingCompletedAt DateTime?
+}
+
+model Address {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label        String
+  line1        String
+  formatted    String
+  landmark     String?
+  instructions String?
+  lat          Float
+  lng          Float
+  isDefault    Boolean  @default(false)
+  isDeleted    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  pickups      Pickup[]
+}
+
+model WasteType {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  description  String?
+  imageUrl     String?
+  co2Factor    Float         @default(1.0)
+  active       Boolean       @default(true)
+  sortOrder    Int           @default(0)
+  pricingRules PricingRule[]
+  pickupItems  PickupItem[]
+}
+
+model PricingRule {
+  id            String    @id @default(cuid())
+  wasteTypeId   String
+  wasteType     WasteType @relation(fields: [wasteTypeId], references: [id], onDelete: Cascade)
+  bagSize       BagSize
+  priceMinor    Int       // in paise (e.g. 1000 = ₹10.00)
+  currency      String    @default("INR")
+  active        Boolean   @default(true)
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+}
+
+model Pickup {
+  id               String               @id @default(cuid())
+  customerId       String
+  customer         User                 @relation(fields: [customerId], references: [id])
+  collectorId      String?
+  collector        Collector?           @relation(fields: [collectorId], references: [id])
+  status           PickupStatus         @default(REQUESTED)
+  scheduledDate    DateTime
+  scheduledSlot    String
+  totalAmountMinor Int
+  paymentStatus    PaymentStatus        @default(PENDING)
+  paymentMode      String               @default("PAY_LATER")
+  pricingSnapshot  Json
+  addressId        String
+  address          Address              @relation(fields: [addressId], references: [id])
+  addressSnapshot  Json
+  notes            String?
+  items            PickupItem[]
+  history          PickupStatusHistory[]
+  doorstepOtp      DoorstepOtp?
+  payments         Payment[]
+  complaints       Complaint[]
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+}
+
+model PickupItem {
+  id             String    @id @default(cuid())
+  pickupId       String
+  pickup         Pickup    @relation(fields: [pickupId], references: [id], onDelete: Cascade)
+  wasteTypeId    String
+  wasteType      WasteType @relation(fields: [wasteTypeId], references: [id])
+  bagSize        BagSize
+  numberOfBags   Int
+  unitPriceMinor Int
+  lineTotalMinor Int
+}
+
+model PickupStatusHistory {
+  id        String       @id @default(cuid())
+  pickupId  String
+  pickup    Pickup       @relation(fields: [pickupId], references: [id], onDelete: Cascade)
+  status    PickupStatus
+  notes     String?
+  createdAt DateTime     @default(now())
+}
+
+model Collector {
+  id             String              @id @default(cuid())
+  name           String
+  phone          String
+  photoUrl       String?
+  vehicleType    String              // "Electric Auto (E-Rickshaw)", "Mini Van"
+  vehicleNumber  String
+  rating         Float               @default(4.9)
+  isOnline       Boolean             @default(true)
+  currentLat     Float
+  currentLng     Float
+  lastLocationAt DateTime            @default(now())
+  pickups        Pickup[]
+  locations      CollectorLocation[]
+}
+
+model CollectorLocation {
+  id          String    @id @default(cuid())
+  collectorId String
+  collector   Collector @relation(fields: [collectorId], references: [id], onDelete: Cascade)
+  lat         Float
+  lng         Float
+  createdAt   DateTime  @default(now())
+}
+
+model DoorstepOtp {
+  id        String   @id @default(cuid())
+  pickupId  String   @unique
+  pickup    Pickup   @relation(fields: [pickupId], references: [id], onDelete: Cascade)
+  codeHash  String
+  rawCodeForDev String?
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  pickupId          String
+  pickup            Pickup        @relation(fields: [pickupId], references: [id])
+  userId            String
+  amountMinor       Int
+  currency          String        @default("INR")
+  status            PaymentStatus @default(PENDING)
+  provider          String        @default("RAZORPAY")
+  providerOrderId   String?       @unique
+  providerPaymentId String?       @unique
+  signature         String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+model RewardLedger {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  points      Int
+  type        String   // ONBOARDING_BONUS, PICKUP_COMPLETED, STREAK_BONUS, ACHIEVEMENT_UNLOCK, REDEMPTION
+  description String
+  createdAt   DateTime @default(now())
+}
+
+model RewardCatalogItem {
+  id          String  @id
+  title       String
+  description String
+  points      Int
+  icon        String
+  partner     String
+  active      Boolean @default(true)
+  redemptions RewardRedemption[]
+}
+
+model RewardRedemption {
+  id          String   @id
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rewardId    String
+  reward      RewardCatalogItem @relation(fields: [rewardId], references: [id])
+  voucherCode String
+  points      Int
+  createdAt   DateTime @default(now())
+}
+
+model Achievement {
+  id          String                @id @default(cuid())
+  name        String
+  description String
+  icon        String
+  targetValue Int
+  metric      String                // KG_RECYCLED, PICKUP_COUNT, STREAK_DAYS
+  bonusPoints Int
+  active      Boolean               @default(true)
+  customers   CustomerAchievement[]
+}
+
+model CustomerAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  progress      Int         @default(0)
+  unlockedAt    DateTime?
+  createdAt     DateTime    @default(now())
+
+  @@unique([userId, achievementId])
+}
+
+model ExchangeHub {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  address     String
+  lat         Float
+  lng         Float
+  contact     String
+  timing      String
+  active      Boolean  @default(true)
+}
+
+model ExchangeListing {
+  id          String        @id @default(cuid())
+  sellerId    String
+  seller      User          @relation(fields: [sellerId], references: [id])
+  sellerName  String
+  sellerAvatarColor String
+  title       String
+  description String
+  material    String
+  quantityKg  Float
+  priceMinor  Int
+  imageUrl    String?
+  status      ListingStatus @default(ACTIVE)
+  lat         Float
+  lng         Float
+  city        String        @default("Mangaluru")
+  distanceKm  Float?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  type      String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
+
+model Complaint {
+  id          String                @id @default(cuid())
+  customerId  String
+  customer    User                  @relation(fields: [customerId], references: [id])
+  pickupId    String?
+  pickup      Pickup?               @relation(fields: [pickupId], references: [id])
+  category    String
+  description String
+  status      ComplaintStatus       @default(OPEN)
+  resolution  String?
+  attachments ComplaintAttachment[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+}
+
+model ComplaintAttachment {
+  id          String    @id @default(cuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  url         String
+  createdAt   DateTime  @default(now())
+}
+
+model OtpRecord {
+  phone              String   @id
+  codeHash           String
+  demoCode           String?
+  expiresAt          DateTime
+  attempts           Int      @default(0)
+  resendCooldownUntil DateTime
+  lockedUntil        DateTime?
+}
+
+// Canonical compatibility snapshot used by the current service layer.  The
+// normalized models above are the durable relational schema; this row lets
+// existing services migrate without changing API behavior in one release.
+model DatabaseState {
+  id        Int      @id
+  data      Json
+  updatedAt DateTime @updatedAt
+}

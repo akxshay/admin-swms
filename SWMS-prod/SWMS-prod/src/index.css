@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --swms-cream: #F0EDE6;
+    --swms-card: #FFFFFF;
+    --swms-primary: #3E8E41;
+    --swms-primary-dark: #2E7031;
+    --swms-accent: #8BC83F;
+    --swms-gold: #F5C518;
+    --swms-nav: #1A1B20;
+    --swms-text: #16181D;
+    --swms-muted: #6B7280;
+    --swms-border: #E6E1D6;
+    --swms-pale-green: #E8F5D8;
+  }
+
+  body {
+    background-color: #F0EDE6;
+    color: #16181D;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Custom rounded corners and shadows for SWMS Design System */
+.swms-card {
+  background-color: #FFFFFF;
+  border-radius: 1.5rem;
+  border: 1px solid #E6E1D6;
+  box-shadow: 0 4px 20px -2px rgba(22, 24, 29, 0.05);
+}
+
+.swms-pill {
+  border-radius: 9999px;
+}
+
+/* Leaflet map fixups */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 1.5rem;
+  font-family: inherit;
+  z-index: 10;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1CDC4;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A8A39A;
+}
