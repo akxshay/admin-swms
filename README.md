@@ -48,14 +48,31 @@ docker --version
 
 ## Quick Start: Running Everything Together
 
-Follow these 4 steps in order to launch the full platform.
+### Step 0: Clone the Repository & Install Dependencies
+
+```bash
+git clone https://github.com/akxshay/admin-swms.git
+cd admin-swms
+
+# 1. Install dependencies for the Admin Dashboard (root folder)
+npm install
+
+# 2. Navigate to the Customer App & Backend folder and install dependencies
+cd SWMS-prod/SWMS-prod
+npm install
+
+# 3. Create the environment file from example
+cp .env.example .env
+# (On Windows PowerShell: copy .env.example .env)
+```
+
+---
 
 ### Step 1: Start the PostgreSQL Database
 
-Navigate to the backend directory and launch the PostgreSQL container:
+In the backend directory (`SWMS-prod/SWMS-prod`), launch the PostgreSQL container:
 
 ```bash
-cd SWMS-prod/SWMS-prod
 docker compose up -d
 ```
 *(On older Docker versions: `docker-compose up -d`)*
